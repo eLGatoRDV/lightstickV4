@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lightstick Controller 💜</title>
+<style>
+  :root{
+    --bg:#0a0a0f; --panel:#15151f; --panel2:#1d1d2b; --border:#2a2a3c;
+    --purple:#7c3aed; --purple-light:#a78bfa; --txt:#e8e8f0; --muted:#9a9ab0;
+    --good:#22c55e; --bad:#ef4444;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    background:radial-gradient(1200px 600px at 50% -10%,#1a1030,transparent),var(--bg);
+    color:var(--txt); min-height:100vh; padding:24px;
+  }
+  .wrap{max-width:920px;margin:0 auto}
+  h1{font-size:26px;margin:0 0 4px;display:flex;align-items:center;gap:8px}
+  .sub{color:var(--muted);font-size:14px;margin-bottom:20px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:16px}
+  .card h2{font-size:15px;text-transform:uppercase;letter-spacing:.08em;color:var(--purple-light);margin:0 0 14px}
+  button{
+    font:inherit;cursor:pointer;border:1px solid var(--border);background:var(--panel2);
+    color:var(--txt);border-radius:10px;padding:10px 16px;transition:.15s;
+  }
+  button:hover:not(:disabled){border-color:var(--purple);background:#262636}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  button.primary{background:var(--purple);border-color:var(--purple)}
+  button.primary:hover:not(:disabled){background:#8b4ff0}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .status{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--muted)}
+  .dot.on{background:var(--good);box-shadow:0 0 8px var(--good)}
+  .dot.err{background:var(--bad)}
+  .sticks{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+  .stick{display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:14px}
+  .stick .sw{width:18px;height:18px;border-radius:50%;border:1px solid #000}
+  .stick .name{flex:1}
+  .stick .x{padding:4px 10px;font-size:12px}
+  .swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:8px;margin-top:6px}
+  .sw-btn{aspect-ratio:1;border-radius:10px;border:2px solid rgba(255,255,255,.12);cursor:pointer;padding:0}
+  .sw-btn:hover{transform:scale(1.06)}
+  input[type=color]{width:64px;height:46px;padding:0;border-radius:10px;border:1px solid var(--border);background:none;cursor:pointer}
+  input[type=text],input[type=number]{background:var(--panel2);border:1px solid var(--border);color:var(--txt);border-radius:10px;padding:10px 12px;font:inherit}
+  input[type=range]{accent-color:var(--purple)}
+  label{font-size:13px;color:var(--muted)}
+  .hint{font-size:12px;color:var(--muted);line-height:1.5;margin-top:8px}
+  .yt-row{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+  .yt-row input{flex:1;min-width:200px}
+  #player{width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#000;margin-bottom:12px}
+  .timeline{position:relative;height:54px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;margin:12px 0;overflow:hidden}
+  .clip{position:absolute;top:0;bottom:0;width:4px;margin-left:-2px;cursor:pointer}
+  .clip:hover{width:6px;margin-left:-3px}
+  .playhead{position:absolute;top:0;bottom:0;width:2px;background:#fff;margin-left:-1px;pointer-events:none}
+  .clips-list{display:flex;flex-direction:column;gap:6px;max-height:180px;overflow:auto;margin-top:10px}
+  .clip-item{display:flex;align-items:center;gap:10px;font-size:13px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:6px 10px}
+  .clip-item .sw{width:16px;height:16px;border-radius:4px;border:1px solid #000}
+  .clip-item .t{font-variant-numeric:tabular-nums;color:var(--muted)}
+  .clip-item .x{margin-left:auto;padding:2px 8px;font-size:12px}
+  .warn{background:#3a1a1a;border:1px solid #5a2a2a;color:#ffb4b4;border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:16px}
+  a{color:var(--purple-light)}
+  .footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="row" style="justify-content:flex-end;align-items:center;gap:8px;margin-bottom:6px">
+    <label data-i18n="lang_label">Idioma</label>
+    <select id="langSel"><option value="es">Español</option><option value="en">English</option><option value="pt">Português</option></select>
+  </div>
+  <h1>Lightstick Controller <span>💜</span></h1>
+  <div class="sub" data-i18n="sub">Controlá tu ARMY Bomb por Bluetooth: colores, efectos del hardware, galería de canciones con su MV y secuencias de luces sincronizadas.</div>
+
+  <div id="nosupport" class="warn" style="display:none" data-i18n-html="nosupport">
+    ⚠️ Este navegador no soporta <b>Web Bluetooth</b>. Usá <b>Chrome, Edge, Brave, Opera o Arc</b> en computadora o Android.
+    En iPhone/iPad necesitás la app <b>Bluefy</b> (Safari y Chrome de iOS no funcionan).
+  </div>
+
+  <!-- TUTORIAL -->
+  <div class="card" style="border-color:#4a3a6a">
+    <h2 data-i18n="tut_h2">📖 Cómo sincronizar tu ARMY Bomb</h2>
+    <ol id="tutList" style="margin:0;padding-left:20px;line-height:1.7;font-size:14px;color:var(--txt)">
+      <li data-i18n="tut1">Encendé el ARMY Bomb y ponelo en <b>modo Bluetooth</b>: mantené el botón hasta que la luz <b>parpadee</b>.</li>
+      <li data-i18n="tut2">Cerrá la app oficial (Weverse) — el lightstick acepta <b>una sola conexión</b> a la vez.</li>
+      <li data-i18n="tut3">En <b>Chrome, Edge, Brave u Opera</b> (PC o Android) tocá <b>"Conectar ARMY Bomb"</b> y elegí tu lightstick de la lista.</li>
+      <li data-i18n="tut4">Elegí una canción de la <b>galería</b> (carga el video y las luces) o pegá un link de YouTube en <b>Sincronización</b>.</li>
+      <li data-i18n="tut5">Dale <b>play al video</b>: el lightstick sigue la secuencia. Sin video, usá <b>"Play sin video"</b> (reloj interno).</li>
+      <li data-i18n="tut6">📱 iPhone/iPad: Safari y Chrome de iOS no sirven — usá la app <b>Bluefy</b>.</li>
+    </ol>
+  </div>
+
+  <!-- CONEXIÓN -->
+  <div class="card">
+    <h2 data-i18n="conn_h2">Conexión</h2>
+    <div class="row">
+      <button id="connectBtn" class="primary" data-i18n="connectBtn">🔗 Conectar ARMY Bomb</button>
+      <span class="status"><span id="dot" class="dot"></span><span id="statusText">Desconectado</span></span>
+    </div>
+    <div id="sticks" class="sticks"></div>
+    <div class="hint" data-i18n="conn_hint">
+      Encendé el lightstick y mantené el botón hasta que parpadee (modo emparejamiento). Cerrá la app oficial de Weverse antes de conectar — solo una conexión a la vez.
+    </div>
+  </div>
+
+  <!-- COLOR MANUAL -->
+  <div class="card">
+    <h2 data-i18n="color_h2">Color manual</h2>
+    <div class="row" style="margin-bottom:12px">
+      <input type="color" id="colorPicker" value="#7c3aed">
+      <button id="applyColor" class="primary" data-i18n="applyColor">Aplicar a todos</button>
+      <button id="offBtn" data-i18n="offBtn">Apagar (negro)</button>
+    </div>
+    <div class="swatches" id="swatches"></div>
+    <div class="hint" data-i18n-html="color_hint">Protocolo RGB completo: <b>[01, R, G, B]</b> a la característica ff02. Funcionan todos los colores (azul, blanco, cian, violeta incluidos).</div>
+  </div>
+
+  <!-- EFECTOS -->
+  <div class="card">
+    <h2 data-i18n="fx_h2">✨ Efectos</h2>
+    <div class="row" style="margin-bottom:6px">
+      <label style="width:100%;color:var(--purple-light)" data-i18n="fx_native_label">🟣 Nativos del lightstick (hardware, más suaves) — usan el color del selector de arriba:</label>
+      <button id="fxnBreath" data-i18n="fxnBreath">🫧 Respirar</button>
+      <button id="fxnBlink" data-i18n="fxnBlink">⚡ Parpadeo</button>
+      <button id="fxnStrobe" data-i18n="fxnStrobe">🌩 Estroboscópico</button>
+      <button id="fxnStop" data-i18n="fxnStop">⏹ Color fijo</button>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <label style="width:100%;color:var(--muted)" data-i18n="fx_sw_label">💻 Por software (color animado desde el navegador):</label>
+      <button id="fxBreath" data-i18n="fxBreath">🫧 Respiración</button>
+      <button id="fxBlink" data-i18n="fxBlink">⚡ Parpadeo</button>
+      <button id="fxFire" data-i18n="fxFire">🔥 Fuego</button>
+      <button id="fxWave" data-i18n="fxWave">🌈 Ola arcoíris</button>
+      <button id="fxStop" data-i18n="fxStop">⏹ Detener</button>
+    </div>
+    <div class="row" style="margin-top:10px;align-items:center;gap:12px">
+      <label data-i18n="speed_label">Velocidad (software)</label>
+      <input type="range" id="fxSpeed" min="1" max="10" value="5" style="flex:1;min-width:140px">
+    </div>
+    <div class="hint" data-i18n-html="fx_hint">Los <b>nativos</b> los corre el propio lightstick (más fluidos). Los <b>por software</b> permiten más variantes. Ambos usan el color del selector de Color manual.</div>
+  </div>
+
+  <style>
+    select{background:var(--panel2);border:1px solid var(--border);color:var(--txt);border-radius:10px;padding:9px 12px;font:inherit}
+  </style>
+
+  <!-- GALERÍA DE CANCIONES -->
+  <div class="card">
+    <style>
+      .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:6px}
+      .song{background:var(--panel2);border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:.15s;text-align:left;padding:0}
+      .song:hover{border-color:var(--purple);transform:translateY(-2px)}
+      .song img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:#000}
+      .song .meta{padding:8px 10px}
+      .song .ti{font-size:13px;font-weight:600;line-height:1.2}
+      .song .al{font-size:11px;color:var(--muted);margin-top:2px}
+      .gfilter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+      .gfilter button.on{background:var(--purple);border-color:var(--purple)}
+    </style>
+    <h2 data-i18n="gal_h2">🎵 Galería de canciones</h2>
+    <div class="hint" style="margin-top:0" data-i18n-html="gal_hint">Tocá una canción: se carga su MV y la secuencia de luces. Después conectá el ARMY Bomb (arriba) y dale <b>play al video</b>. Las secuencias son fan-made y editables abajo.</div>
+    <div class="gallery" id="gallery"></div>
+  </div>
+
+  <!-- YOUTUBE SYNC -->
+  <div class="card">
+    <h2 data-i18n="yt_h2">Sincronización con YouTube</h2>
+    <div class="yt-row">
+      <input type="text" id="ytUrl" data-i18n-ph="ytUrl_ph" placeholder="Pegá el link de YouTube o el ID del video">
+      <button id="loadVideo" class="primary" data-i18n="loadVideo">Cargar</button>
+    </div>
+    <div id="player"></div>
+
+    <div id="curSeq" style="margin:10px 0;padding:9px 12px;border-radius:8px;background:var(--panel2);border:1px solid var(--border);font-size:13px">
+      <b data-i18n="curseq_label">▶ Secuencia cargada:</b> <span id="curSeqName" style="color:var(--purple-light)">— ninguna —</span>
+    </div>
+
+    <!-- Secuencias de ejemplo + reproducción -->
+    <div class="row" style="align-items:center;margin-bottom:12px">
+      <select id="exampleSeq"></select>
+      <button id="loadExample" class="primary" data-i18n="loadExample">Cargar ejemplo</button>
+      <button id="playClock" data-i18n="playClock">▶ Play sin video</button>
+      <button id="stopClock">⏹</button>
+      <label style="display:inline-flex;align-items:center;gap:6px"><input type="checkbox" id="loopChk"> <span data-i18n="loop_label">🔁 Loop</span></label>
+      <span class="status" style="margin-left:auto"><label>Sync</label> <span id="syncDot" class="dot"></span></span>
+    </div>
+
+    <!-- Editor de cue -->
+    <div class="row" style="align-items:flex-end;gap:10px">
+      <div><label data-i18n="color_label">Color</label><br><input type="color" id="clipColor" value="#7c3aed"></div>
+      <div style="flex:1;min-width:150px"><label><span data-i18n="bright_label">Brillo</span>: <span id="clipBrightV">100</span>%</label><br><input type="range" id="clipBright" min="0" max="100" value="100" style="width:100%"></div>
+      <div><label data-i18n="trans_label">Transición</label><br><select id="clipTrans"><option value="cut" data-i18n="trans_cut">Corte</option><option value="fade">Fade</option></select></div>
+      <div><label data-i18n="fxc_label">Efecto</label><br><select id="clipFx"><option value="none" data-i18n="fxc_none">Ninguno</option><option value="breath" data-i18n="fxc_breath">Respiración</option><option value="flash">Flash</option><option value="wave" data-i18n="fxc_wave">Ola (arcoíris)</option></select></div>
+      <div><label data-i18n="time_label">Tiempo (s)</label><br><input type="number" id="clipTime" data-i18n-ph="auto_ph" placeholder="auto" min="0" step="0.5" style="width:88px"></div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button id="addClip" class="primary" data-i18n="addClip">➕ Agregar cue</button>
+      <button id="clearClips" data-i18n="clearClips">🗑 Limpiar</button>
+      <button id="exportSeq" data-i18n="exportSeq">⬇️ Exportar</button>
+      <button id="importSeq" data-i18n="importSeq">⬆️ Importar</button>
+      <input type="file" id="importFile" accept="application/json" style="display:none">
+    </div>
+
+    <div class="row" style="align-items:center;margin-top:10px;gap:10px">
+      <label data-i18n="curcolor_label">Color actual</label>
+      <div id="livePrev" style="flex:1;height:28px;border-radius:8px;border:1px solid var(--border);background:#000"></div>
+      <span id="livePrevHex" style="font-variant-numeric:tabular-nums;color:var(--muted);min-width:80px;text-align:right;font-size:13px">—</span>
+    </div>
+    <div class="timeline" id="timeline">
+      <div class="playhead" id="playhead" style="left:0"></div>
+    </div>
+    <div class="clips-list" id="clipsList"></div>
+    <div id="seqMsg" class="hint" style="min-height:16px"></div>
+    <div class="hint" data-i18n-html="yt_hint">
+      Cargá un video de YouTube y dale play (sincroniza al tiempo real del video), o usá <b>Play sin video</b> para reproducir con reloj interno. Cada cue guarda color + brillo + transición (corte/fade) + efecto. Tocá una hora de la lista para saltar ahí (con video).
+    </div>
+  </div>
+
+  <div class="footer" data-i18n="footer">
+    Proyecto personal de fan, no oficial. Protocolo compatible con ARMY Bomb Ver 3, Ver 4 y SE/multiM.
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   PROTOCOLO ARMY BOMB  (Ver 3 / Ver 4 / SE / multiM)
+   ============================================================ */
+const SVC_CUSTOM = "00010203-0405-0607-0809-0a0b0c0d1911"; // servicio SE/V3
+const CHR_SE      = "00010203-0405-0607-0809-0a0b0c0d2b19"; // característica SE/V3
+const SVC_INFO    = "0000180a-0000-1000-8000-00805f9b34fb"; // device info
+const SVC_BATT    = "0000180f-0000-1000-8000-00805f9b34fb"; // batería
+// servicios vendor del Ver 4
+const V4_SERVICES = [
+  "0001fe01-0000-1000-8000-00805f9800c4",
+  "0001fe02-0000-1000-8000-00805f9800c4",
+  "0001fe03-0000-1000-8000-00805f9800c4",
+  "0001fe04-0000-1000-8000-00805f9800c4",
+  "0001fe06-0000-1000-8000-00805f9800c4",
+];
+// características de escritura preferidas del Ver 4 (en orden de preferencia)
+const V4_WRITE_CHARS = [
+  "0001ff01-0000-1000-8000-00805f9800c4",
+  "0001ff02-0000-1000-8000-00805f9800c4",
+  "0001ff04-0000-1000-8000-00805f9800c4",
+  "0001ff05-0000-1000-8000-00805f9800c4",
+  "0001ff06-0000-1000-8000-00805f9800c4",
+  "0001ff13-0000-1000-8000-00805f9800c4",
+];
+
+// Handshake del Ver 4: hay que LEER estas características antes de poder escribir colores.
+// Sin esto, el lightstick conecta pero se queda parpadeando sin aceptar comandos.
+const V4_HANDSHAKE = [
+  {svc:"0001fe03-0000-1000-8000-00805f9800c4", chr:"0001ff05-0000-1000-8000-00805f9800c4"}, // vendor ff05 (MAC)
+  {svc:"0001fe04-0000-1000-8000-00805f9800c4", chr:"0001ff06-0000-1000-8000-00805f9800c4"}, // vendor ff06
+  {svc:"0001fe02-0000-1000-8000-00805f9800c4", chr:"0001ff04-0000-1000-8000-00805f9800c4"}, // vendor ff04
+  {svc:SVC_INFO, chr:"00002a26-0000-1000-8000-00805f9b34fb"},                                // firmware
+  {svc:SVC_BATT, chr:"00002a19-0000-1000-8000-00805f9b34fb"},                                // batería
+];
+async function v4Handshake(server){
+  for (const {svc, chr} of V4_HANDSHAKE){
+    try{
+      const s = await server.getPrimaryService(svc);
+      const c = await s.getCharacteristic(chr);
+      if (c.properties.read) await c.readValue();
+    }catch(e){ /* característica opcional: ignorar */ }
+  }
+}
+
+// Configuración de diagnóstico (ajustable desde la UI para encontrar el mapeo de TU unidad)
+const diag = { order:"RGB", byte4:1, format:"auto", v4enc:"split", charIndex:-1, blueLo:0 };
+
+// Reordena los canales R,G,B según diag.order
+function applyOrder(r,g,b){
+  const map = {R:r, G:g, B:b};
+  return [map[diag.order[0]], map[diag.order[1]], map[diag.order[2]]];
+}
+
+// Construye el paquete de bytes según el tipo de lightstick + ajustes de diagnóstico
+function buildPacket(hex, type, byte4 = diag.byte4){
+  const h = hex.startsWith("#") ? hex.slice(1) : hex;
+  const r = parseInt(h.slice(0,2),16) || 0;
+  const g = parseInt(h.slice(2,4),16) || 0;
+  const b = parseInt(h.slice(4,6),16) || 0;
+  const [c0,c1,c2] = applyOrder(r,g,b);
+  // formato efectivo: auto = según el tipo detectado; o forzado a v4 / se
+  let fmt = diag.format;
+  if (fmt === "auto") fmt = (type === "BTS_V4 LS") ? "v4" : "se";
+  if (fmt === "v4"){
+    return new Uint8Array([c0, c1, c2, byte4]);        // V4: [c0,c1,c2,byte4]
+  }
+  // SE / Ver 3 / multiM: [1,1,11,0,0,c0,c1,c2,0,0,checksum]
+  const arr = [1,1,11,0,0,c0,c1,c2,0,0];
+  const checksum = (arr.reduce((a,c)=>a+c,0) - 2) & 255;
+  arr.push(checksum);
+  return new Uint8Array(arr);
+}
+
+// ¿el stick usa el camino de escritura "con respuesta + throttle" (V4) o "sin respuesta" (SE)?
+function usesV4Write(stick){
+  let fmt = diag.format;
+  if (fmt === "auto") return stick.type === "BTS_V4 LS";
+  return fmt === "v4";
+}
+
+// throttle de escritura por característica (mínimo 120ms entre escrituras V4)
+const writeState = new WeakMap();
+function throttledWrite(stick, packet){
+  let st = writeState.get(stick.characteristic) ?? {inFlight:false, lastWriteAt:0};
+  writeState.set(stick.characteristic, st);
+  st.pending = packet;
+  if (st.inFlight) return st.pump ?? Promise.resolve();
+  st.inFlight = true;
+  st.pump = (async () => {
+    while (st.pending){
+      const p = st.pending; st.pending = undefined;
+      const wait = Math.max(0, st.lastWriteAt + 120 - Date.now());
+      if (wait > 0) await new Promise(r=>setTimeout(r, wait));
+      if (!isConnected(stick)) throw new Error("Lightstick desconectado");
+      const c = stick.characteristic;
+      if (c.properties.write) await c.writeValue(p);
+      else await c.writeValueWithoutResponse(p);
+      st.lastWriteAt = Date.now();
+    }
+  })().finally(() => {
+    st.inFlight = false; st.pump = undefined;
+    if (st.pending && isConnected(stick)) throttledWrite(stick, st.pending).catch(()=>{});
+  });
+  return st.pump;
+}
+
+function isConnected(stick){ return stick.device?.gatt?.connected ?? false; }
+
+function hexToRgb(hex){
+  const h = hex.startsWith("#") ? hex.slice(1) : hex;
+  return [parseInt(h.slice(0,2),16)||0, parseInt(h.slice(2,4),16)||0, parseInt(h.slice(4,6),16)||0];
+}
+
+// Protocolo REAL del Ver 4, CAPTURADO de la app oficial (lightstick falso + Bumble):
+// color = UN comando de 4 bytes a la característica ff02 (handle 0x15):
+//   [0x01, R, G, B]   ej:  azul=01 00 00 ff · rojo=01 ff 00 00 · blanco=01 ff ff ff
+function buildV4Cmds(r,g,b,refresh=false){
+  if (diag.v4enc === "rgb565"){
+    const v = ((r>>3)<<11)|((g>>2)<<5)|(b>>3);
+    return [ new Uint8Array([0x01, (v>>8)&0xff, v&0xff]) ];
+  }
+  return [ new Uint8Array([0x01, r, g, b]) ];
+}
+
+// Escribe bytes crudos a todas las características de color del V4 (con respuesta)
+async function writeV4Raw(stick, packets){
+  if (stick._writing) return;          // evita encimar escrituras (keep-alive + cambios)
+  stick._writing = true;
+  try{ await _writeV4(stick, packets); } finally { stick._writing = false; }
+}
+async function _writeV4(stick, packets){
+  const all = stick.writeChars && stick.writeChars.length ? stick.writeChars : [stick.characteristic];
+  let chars;
+  if (diag.charIndex >= 0 && all[diag.charIndex]){
+    chars = [all[diag.charIndex]];        // una sola característica elegida por el usuario
+  } else {
+    const wr = all.filter(c => c.properties.write);
+    chars = wr.length ? wr : all;          // "todas" (modo automático)
+  }
+  for (const pkt of packets){
+    for (const c of chars){
+      if (!isConnected(stick)) return;
+      try{
+        if (c.properties.write) await c.writeValue(pkt);
+        else await c.writeValueWithoutResponse(pkt);
+      }catch(e){ /* característica equivocada: ignorar */ }
+    }
+  }
+}
+
+// API de alto nivel: pinta un lightstick de un color
+function writeColor(stick, hex, byte4 = diag.byte4){
+  if (usesV4Write(stick)){
+    const [r,g,b] = hexToRgb(hex);
+    return writeV4Raw(stick, buildV4Cmds(r,g,b));        // V4 firmware nuevo
+  }
+  if (!isConnected(stick)) return Promise.reject(new Error("Desconectado"));
+  const packet = buildPacket(hex, stick.type, byte4);    // SE/V3: protocolo viejo
+  const c = stick.characteristic;
+  if (c.properties.writeWithoutResponse) return c.writeValueWithoutResponse(packet);
+  return c.writeValue(packet);
+}
+
+async function connectGatt(device){
+  let server;
+  for (let i=0;i<3;i++){
+    try{ server = await device.gatt.connect(); if(server) break; }
+    catch(e){ if(i===2) throw e; await new Promise(r=>setTimeout(r,400)); }
+  }
+  return server;
+}
+
+// Descubre TODAS las características de escritura del Ver 4 (prioriza write-with-response,
+// que es donde la app oficial manda el color, handle 0x15).
+async function findV4WriteChars(server){
+  const all = [];
+  let colorChar = null;
+  for (const svcUuid of V4_SERVICES){
+    let svc; try{ svc = await server.getPrimaryService(svcUuid); }catch{ continue; }
+    let chars; try{ chars = await svc.getCharacteristics(); }catch{ continue; }
+    // dentro del servicio, las write-with-response en orden de handle
+    const wr = chars.filter(c => c.properties.write);
+    // el servicio que tiene DOS write-with-response contiene el color; handle 0x15 = la 2ª
+    if (wr.length >= 2 && !colorChar) colorChar = wr[1];
+    for (const c of chars){
+      const w = c.properties.write, wnr = c.properties.writeWithoutResponse;
+      if (w || wnr){
+        all.push(c);
+        console.info("[LS] char escribible", {service:svcUuid, uuid:c.uuid, write:w, writeNR:wnr});
+      }
+    }
+  }
+  // primero las write-with-response (color), luego el resto
+  all.sort((a,b)=> (b.properties.write?1:0) - (a.properties.write?1:0));
+  if (colorChar) console.info("[LS] característica de COLOR detectada (handle 0x15):", colorChar.uuid);
+  return { all, colorChar };
+}
+
+/* ============================================================
+   ESTADO + UI
+   ============================================================ */
+const sticks = [];          // lightsticks conectados
+const $ = s => document.querySelector(s);
+
+/* ============================================================
+   IDIOMAS (ES / EN / PT)
+   ============================================================ */
+const T = {
+  es:{ lang_label:"Idioma",
+    sub:"Controlá tu ARMY Bomb por Bluetooth: colores, efectos del hardware, galería de canciones con su MV y secuencias de luces sincronizadas.",
+    nosupport:"⚠️ Este navegador no soporta <b>Web Bluetooth</b>. Usá <b>Chrome, Edge, Brave, Opera o Arc</b> en computadora o Android. En iPhone/iPad necesitás la app <b>Bluefy</b>.",
+    tut_h2:"📖 Cómo sincronizar tu ARMY Bomb",
+    tut1:"Encendé el ARMY Bomb y ponelo en <b>modo Bluetooth</b>: mantené el botón hasta que la luz <b>parpadee</b>.",
+    tut2:"Cerrá la app oficial (Weverse) — el lightstick acepta <b>una sola conexión</b> a la vez.",
+    tut3:"En <b>Chrome, Edge, Brave u Opera</b> (PC o Android) tocá <b>\"Conectar ARMY Bomb\"</b> y elegí tu lightstick.",
+    tut4:"Elegí una canción de la <b>galería</b> (carga el video y las luces) o pegá un link de YouTube en <b>Sincronización</b>.",
+    tut5:"Dale <b>play al video</b>: el lightstick sigue la secuencia. Sin video, usá <b>\"Play sin video\"</b> (reloj interno).",
+    tut6:"📱 iPhone/iPad: Safari y Chrome de iOS no sirven — usá la app <b>Bluefy</b>.",
+    conn_h2:"Conexión", connectBtn:"🔗 Conectar ARMY Bomb",
+    conn_hint:"Encendé el lightstick y mantené el botón hasta que parpadee (modo emparejamiento). Cerrá la app oficial de Weverse antes de conectar — solo una conexión a la vez.",
+    color_h2:"Color manual", applyColor:"Aplicar a todos", offBtn:"Apagar (negro)",
+    color_hint:"Protocolo RGB completo: <b>[01, R, G, B]</b>. Funcionan todos los colores (azul, blanco, cian, violeta incluidos).",
+    fx_h2:"✨ Efectos", fx_native_label:"🟣 Nativos del lightstick (hardware, más suaves) — usan el color de arriba:",
+    fxnBreath:"🫧 Respirar", fxnBlink:"⚡ Parpadeo", fxnStrobe:"🌩 Estroboscópico", fxnStop:"⏹ Color fijo",
+    fx_sw_label:"💻 Por software (color animado desde el navegador):",
+    fxBreath:"🫧 Respiración", fxBlink:"⚡ Parpadeo", fxFire:"🔥 Fuego", fxWave:"🌈 Ola arcoíris", fxStop:"⏹ Detener",
+    speed_label:"Velocidad (software)",
+    fx_hint:"Los <b>nativos</b> los corre el propio lightstick (más fluidos). Los <b>por software</b> dan más variantes.",
+    gal_h2:"🎵 Galería de canciones",
+    gal_hint:"Tocá una canción: se carga su MV y la secuencia de luces. Después conectá el ARMY Bomb y dale <b>play al video</b>.",
+    yt_h2:"Sincronización con YouTube", ytUrl_ph:"Pegá el link de YouTube o el ID del video", loadVideo:"Cargar",
+    curseq_label:"▶ Secuencia cargada:", none:"— ninguna —",
+    loadExample:"Cargar ejemplo", playClock:"▶ Play sin video", pauseClock:"⏸ Pausar", loop_label:"🔁 Loop",
+    color_label:"Color", bright_label:"Brillo", trans_label:"Transición", trans_cut:"Corte",
+    fxc_label:"Efecto", fxc_none:"Ninguno", fxc_breath:"Respiración", fxc_wave:"Ola (arcoíris)",
+    time_label:"Tiempo (s)", auto_ph:"auto",
+    addClip:"➕ Agregar cue", clearClips:"🗑 Limpiar", exportSeq:"⬇️ Exportar", importSeq:"⬆️ Importar",
+    curcolor_label:"Color actual",
+    yt_hint:"Cargá un video de YouTube y dale play (sincroniza al video), o usá <b>Play sin video</b> (reloj interno). Tocá una hora de la lista para saltar ahí.",
+    footer:"Proyecto personal de fan, no oficial. Compatible con ARMY Bomb Ver 3, Ver 4 y SE/multiM.",
+    st_scan:"Buscando…", st_conn:"Conectado", st_err:"Error: ", st_disc:"Desconectado" },
+  en:{ lang_label:"Language",
+    sub:"Control your ARMY Bomb over Bluetooth: colors, hardware effects, a song gallery with its MV and synced light sequences.",
+    nosupport:"⚠️ This browser doesn't support <b>Web Bluetooth</b>. Use <b>Chrome, Edge, Brave, Opera or Arc</b> on desktop or Android. On iPhone/iPad use the <b>Bluefy</b> app.",
+    tut_h2:"📖 How to sync your ARMY Bomb",
+    tut1:"Turn on the ARMY Bomb and put it in <b>Bluetooth mode</b>: hold the button until the light <b>blinks</b>.",
+    tut2:"Close the official app (Weverse) — the lightstick only accepts <b>one connection</b> at a time.",
+    tut3:"In <b>Chrome, Edge, Brave or Opera</b> (PC or Android) tap <b>\"Connect ARMY Bomb\"</b> and pick your lightstick.",
+    tut4:"Pick a song from the <b>gallery</b> (loads the video + lights) or paste a YouTube link in <b>Sync</b>.",
+    tut5:"Press <b>play on the video</b>: the lightstick follows the sequence. No video? Use <b>\"Play without video\"</b> (internal clock).",
+    tut6:"📱 iPhone/iPad: iOS Safari & Chrome don't work — use the <b>Bluefy</b> app.",
+    conn_h2:"Connection", connectBtn:"🔗 Connect ARMY Bomb",
+    conn_hint:"Turn on the lightstick and hold the button until it blinks (pairing mode). Close the official Weverse app before connecting — one connection at a time.",
+    color_h2:"Manual color", applyColor:"Apply to all", offBtn:"Turn off (black)",
+    color_hint:"Full RGB protocol: <b>[01, R, G, B]</b>. All colors work (blue, white, cyan, purple included).",
+    fx_h2:"✨ Effects", fx_native_label:"🟣 Native (hardware, smoother) — use the color above:",
+    fxnBreath:"🫧 Breathe", fxnBlink:"⚡ Blink", fxnStrobe:"🌩 Strobe", fxnStop:"⏹ Solid color",
+    fx_sw_label:"💻 Software (color animated from the browser):",
+    fxBreath:"🫧 Breathing", fxBlink:"⚡ Blink", fxFire:"🔥 Fire", fxWave:"🌈 Rainbow wave", fxStop:"⏹ Stop",
+    speed_label:"Speed (software)",
+    fx_hint:"<b>Native</b> effects run on the lightstick itself (smoother). <b>Software</b> ones give more variety.",
+    gal_h2:"🎵 Song gallery",
+    gal_hint:"Tap a song: it loads its MV and the light sequence. Then connect the ARMY Bomb and press <b>play on the video</b>.",
+    yt_h2:"YouTube sync", ytUrl_ph:"Paste the YouTube link or video ID", loadVideo:"Load",
+    curseq_label:"▶ Loaded sequence:", none:"— none —",
+    loadExample:"Load example", playClock:"▶ Play without video", pauseClock:"⏸ Pause", loop_label:"🔁 Loop",
+    color_label:"Color", bright_label:"Brightness", trans_label:"Transition", trans_cut:"Cut",
+    fxc_label:"Effect", fxc_none:"None", fxc_breath:"Breathing", fxc_wave:"Wave (rainbow)",
+    time_label:"Time (s)", auto_ph:"auto",
+    addClip:"➕ Add cue", clearClips:"🗑 Clear", exportSeq:"⬇️ Export", importSeq:"⬆️ Import",
+    curcolor_label:"Current color",
+    yt_hint:"Load a YouTube video and press play (syncs to the video), or use <b>Play without video</b> (internal clock). Tap a time in the list to jump there.",
+    footer:"Personal, unofficial fan project. Compatible with ARMY Bomb Ver 3, Ver 4 and SE/multiM.",
+    st_scan:"Scanning…", st_conn:"Connected", st_err:"Error: ", st_disc:"Disconnected" },
+  pt:{ lang_label:"Idioma",
+    sub:"Controle seu ARMY Bomb por Bluetooth: cores, efeitos do hardware, galeria de músicas com o MV e sequências de luz sincronizadas.",
+    nosupport:"⚠️ Este navegador não suporta <b>Web Bluetooth</b>. Use <b>Chrome, Edge, Brave, Opera ou Arc</b> no computador ou Android. No iPhone/iPad use o app <b>Bluefy</b>.",
+    tut_h2:"📖 Como sincronizar seu ARMY Bomb",
+    tut1:"Ligue o ARMY Bomb e coloque em <b>modo Bluetooth</b>: segure o botão até a luz <b>piscar</b>.",
+    tut2:"Feche o app oficial (Weverse) — o lightstick aceita <b>uma conexão</b> por vez.",
+    tut3:"No <b>Chrome, Edge, Brave ou Opera</b> (PC ou Android) toque em <b>\"Conectar ARMY Bomb\"</b> e escolha seu lightstick.",
+    tut4:"Escolha uma música na <b>galeria</b> (carrega o vídeo e as luzes) ou cole um link do YouTube em <b>Sincronização</b>.",
+    tut5:"Dê <b>play no vídeo</b>: o lightstick segue a sequência. Sem vídeo, use <b>\"Tocar sem vídeo\"</b> (relógio interno).",
+    tut6:"📱 iPhone/iPad: Safari e Chrome do iOS não funcionam — use o app <b>Bluefy</b>.",
+    conn_h2:"Conexão", connectBtn:"🔗 Conectar ARMY Bomb",
+    conn_hint:"Ligue o lightstick e segure o botão até piscar (modo pareamento). Feche o app oficial Weverse antes de conectar — uma conexão por vez.",
+    color_h2:"Cor manual", applyColor:"Aplicar a todos", offBtn:"Apagar (preto)",
+    color_hint:"Protocolo RGB completo: <b>[01, R, G, B]</b>. Todas as cores funcionam (azul, branco, ciano, roxo incluídos).",
+    fx_h2:"✨ Efeitos", fx_native_label:"🟣 Nativos (hardware, mais suaves) — usam a cor acima:",
+    fxnBreath:"🫧 Respirar", fxnBlink:"⚡ Piscar", fxnStrobe:"🌩 Estroboscópico", fxnStop:"⏹ Cor fixa",
+    fx_sw_label:"💻 Por software (cor animada pelo navegador):",
+    fxBreath:"🫧 Respiração", fxBlink:"⚡ Piscar", fxFire:"🔥 Fogo", fxWave:"🌈 Onda arco-íris", fxStop:"⏹ Parar",
+    speed_label:"Velocidade (software)",
+    fx_hint:"Os <b>nativos</b> rodam no próprio lightstick (mais fluidos). Os <b>por software</b> dão mais variações.",
+    gal_h2:"🎵 Galeria de músicas",
+    gal_hint:"Toque numa música: carrega o MV e a sequência de luzes. Depois conecte o ARMY Bomb e dê <b>play no vídeo</b>.",
+    yt_h2:"Sincronização com YouTube", ytUrl_ph:"Cole o link do YouTube ou o ID do vídeo", loadVideo:"Carregar",
+    curseq_label:"▶ Sequência carregada:", none:"— nenhuma —",
+    loadExample:"Carregar exemplo", playClock:"▶ Tocar sem vídeo", pauseClock:"⏸ Pausar", loop_label:"🔁 Loop",
+    color_label:"Cor", bright_label:"Brilho", trans_label:"Transição", trans_cut:"Corte",
+    fxc_label:"Efeito", fxc_none:"Nenhum", fxc_breath:"Respiração", fxc_wave:"Onda (arco-íris)",
+    time_label:"Tempo (s)", auto_ph:"auto",
+    addClip:"➕ Adicionar cue", clearClips:"🗑 Limpar", exportSeq:"⬇️ Exportar", importSeq:"⬆️ Importar",
+    curcolor_label:"Cor atual",
+    yt_hint:"Carregue um vídeo do YouTube e dê play (sincroniza ao vídeo), ou use <b>Tocar sem vídeo</b> (relógio interno). Toque num tempo da lista para pular.",
+    footer:"Projeto pessoal de fã, não oficial. Compatível com ARMY Bomb Ver 3, Ver 4 e SE/multiM.",
+    st_scan:"Procurando…", st_conn:"Conectado", st_err:"Erro: ", st_disc:"Desconectado" },
+};
+let LANG = localStorage.getItem("lslang") || "es";
+function applyLang(lang){
+  if(!T[lang]) lang="es";
+  LANG=lang; const d=T[lang];
+  document.documentElement.lang=lang;
+  document.querySelectorAll("[data-i18n]").forEach(el=>{ const k=el.getAttribute("data-i18n"); if(d[k]!=null) el.textContent=d[k]; });
+  document.querySelectorAll("[data-i18n-html]").forEach(el=>{ const k=el.getAttribute("data-i18n-html"); if(d[k]!=null) el.innerHTML=d[k]; });
+  document.querySelectorAll("[data-i18n-ph]").forEach(el=>{ const k=el.getAttribute("data-i18n-ph"); if(d[k]!=null) el.placeholder=d[k]; });
+  // textos dinámicos
+  const none=["— ninguna —","— none —","— nenhuma —"];
+  const cs=$("#curSeqName"); if(cs && none.includes(cs.textContent.trim())) cs.textContent=d.none;
+  if(typeof updatePlayBtn==="function") updatePlayBtn();
+  if(typeof refreshStatus==="function") refreshStatus();
+  localStorage.setItem("lslang", lang);
+}
+
+if (!navigator.bluetooth) $("#nosupport").style.display = "block";
+
+// KEEP-ALIVE CONTINUO: el Ver 4 vuelve a su color por defecto muy rápido si deja de
+// recibir comandos. Reenviamos el color sin pausa (como la app oficial), esperando a que
+// cada escritura termine, así no quedan huecos que causen el parpadeo rojo.
+let manualPackets = null;   // si está activo, el keep-alive manda estos bytes en vez del color
+let gattBusy = false;       // pausa el keep-alive mientras se lee la batería (evita choque GATT)
+const BATT_CHAR = "00002a19-0000-1000-8000-00805f9b34fb";
+async function readBattery(stick){
+  if(!isConnected(stick)) return;
+  gattBusy = true;
+  try{
+    const s = await stick.device.gatt.getPrimaryService(SVC_BATT);
+    const c = await s.getCharacteristic(BATT_CHAR);
+    const v = await c.readValue();
+    stick._battery = v.getUint8(0);
+    renderSticks();
+  }catch(e){ /* este modelo no expone batería */ }
+  finally{ gattBusy = false; }
+}
+setInterval(()=>{ sticks.forEach(s=>{ if(isConnected(s)) readBattery(s); }); }, 60000);
+// Efectos NATIVOS del lightstick (capturados de la app): el 1er byte es el MODO.
+//   00=apagar · 01=color sólido · 02=parpadeo · 03=respirar · 04=estroboscópico
+// Primero "ceba" el color unas veces (para fijar el color del efecto), luego manda el modo en loop.
+function nativePackets(s){
+  if ((s._nativePrime||0) < 6){ s._nativePrime=(s._nativePrime||0)+1; return buildV4Cmds(...hexToRgb(s._lastColor||"#ffffff")); }
+  return [ new Uint8Array([s._nativeMode,0,0,0]) ];
+}
+(async function keepAliveLoop(){
+  for(;;){
+    for (const s of [...sticks]){
+      if (gattBusy) continue;
+      if (s.type === "BTS_V4 LS" && isConnected(s)){
+        const pkts = manualPackets
+          || (s._nativeMode ? nativePackets(s)
+          : (s._lastColor ? buildV4Cmds(...hexToRgb(s._lastColor)) : null));
+        if (!pkts) continue;
+        s._writing = true;
+        try{ await _writeV4(s, pkts); }
+        catch(e){}
+        finally{ s._writing = false; }
+      }
+    }
+    await new Promise(r=>setTimeout(r, 8));
+  }
+})();
+
+async function connect(){
+  setStatus("scanning");
+  try{
+    const device = await navigator.bluetooth.requestDevice({
+      filters:[
+        {name:"BTS LIGHTSTICK_SE"},
+        {name:"multiM"},
+        {name:"BTS LIGHTSTICK3"},
+        {name:"BTS_V4 LS"},
+        {namePrefix:"BBOMB-"},
+      ],
+      optionalServices:[SVC_CUSTOM, SVC_INFO, SVC_BATT, ...V4_SERVICES],
+    });
+    const server = await connectGatt(device);
+    const name = device.name || "";
+    let stick;
+
+    if (name.includes("BTS_V4") || name.startsWith("BBOMB-")){
+      await v4Handshake(server); // imprescindible: "despierta" al Ver 4
+      const { all:chars, colorChar } = await findV4WriteChars(server);
+      if (!chars.length) throw new Error("No se encontró característica de escritura en el Ver 4");
+      stick = {id:device.id, name:name||"BTS_V4 LS", device, characteristic:chars[0], writeChars:chars, type:"BTS_V4 LS"};
+      populateCharSelector(chars, colorChar);
+      await writeColor(stick, "#FFFFFF"); // color inicial: confirma que responde
+      stick._lastColor = "#FFFFFF";
+    } else {
+      await new Promise(r=>setTimeout(r,1000)); // el SE necesita una pausa
+      const svc = await server.getPrimaryService(SVC_CUSTOM);
+      const ch  = await svc.getCharacteristic(CHR_SE);
+      const type = (name.includes("multiM") || name.includes("BTS LIGHTSTICK3")) ? "multiM" : "BTS Lightstick_SE";
+      stick = {id:device.id, name:name||"BTS Lightstick", device, characteristic:ch, type};
+      await writeColor(stick, "#00FF00"); // flash verde de confirmación
+    }
+
+    device.addEventListener("gattserverdisconnected", () => removeStick(stick.id));
+    sticks.push(stick);
+    renderSticks();
+    setStatus("idle");
+    readBattery(stick);   // lee y muestra el % de batería
+  }catch(e){
+    console.error(e);
+    if (e.name !== "NotFoundError") setStatus("error", e.message);
+    else setStatus(sticks.length ? "idle" : "disconnected");
+  }
+}
+
+function removeStick(id){
+  const i = sticks.findIndex(s=>s.id===id);
+  if (i>=0){ try{sticks[i].device.gatt.disconnect();}catch{} sticks.splice(i,1); }
+  renderSticks();
+  if (!sticks.length) setStatus("disconnected");
+}
+
+let _statusState="disconnected", _statusMsg="";
+function setStatus(state, msg){ _statusState=state; _statusMsg=msg||""; refreshStatus(); }
+function refreshStatus(){
+  const dot=$("#dot"), txt=$("#statusText"); if(!txt) return; const d=T[LANG];
+  dot.className="dot";
+  if(_statusState==="scanning"){ txt.textContent=d.st_scan; }
+  else if(_statusState==="idle"){ dot.classList.add("on"); txt.textContent=`${d.st_conn} (${sticks.length})`; }
+  else if(_statusState==="error"){ dot.classList.add("err"); txt.textContent=d.st_err+_statusMsg; }
+  else { txt.textContent=d.st_disc; }
+}
+
+function renderSticks(){
+  const box=$("#sticks"); box.innerHTML="";
+  sticks.forEach(s=>{
+    const el=document.createElement("div"); el.className="stick";
+    const bat = s._battery!=null
+      ? `<span style="font-size:13px;margin-right:8px;color:${s._battery<=20?'var(--bad)':'var(--muted)'}">🔋 ${s._battery}%</span>`
+      : "";
+    el.innerHTML=`<span class="sw" style="background:${s._lastColor||'#222'}"></span>
+      <span class="name">${s.name} · <span style="color:var(--muted)">${s.type}</span></span>
+      ${bat}<button class="x">Quitar</button>`;
+    el.querySelector(".x").onclick=()=>removeStick(s.id);
+    box.appendChild(el);
+  });
+}
+
+function paintAll(hex){
+  stopPlayback();             // pintar manual / efecto corta la secuencia
+  sticks.forEach(s=>{
+    s._nativeMode = null;     // color fijo cancela el efecto nativo
+    s._lastColor = hex;
+    writeColor(s, hex).catch(err=>console.warn("write fail",err));
+  });
+  if (typeof setLivePreview === "function") setLivePreview(hex);
+  renderSticks();
+}
+
+/* ----- swatches ----- */
+// Gama cálida (rojo->verde) que esta unidad SÍ reproduce por BLE.
+const PRESETS = ["#FF0000","#FF7A00","#FFD500","#00FF00","#00FFAA","#00D5FF","#0066FF","#0000FF","#7C3AED","#FF00FF","#FF1493","#FFFFFF","#FF6FB5","#00FFFF","#ADFF2F","#000000"];
+const swBox=$("#swatches");
+PRESETS.forEach(c=>{
+  const b=document.createElement("button"); b.className="sw-btn"; b.style.background=c;
+  b.title=c; b.onclick=()=>{ $("#colorPicker").value=c.toLowerCase()==="#000000"?"#000000":c; paintAll(c); };
+  swBox.appendChild(b);
+});
+
+$("#connectBtn").onclick=connect;
+$("#applyColor").onclick=()=>{ stopFx(); paintAll($("#colorPicker").value); };
+$("#offBtn").onclick=()=>{ stopFx(); paintAll("#000000"); };
+
+/* ----- EFECTOS ----- */
+let fxTimer=null, fxT=0;
+function stopFx(){ if(fxTimer){clearInterval(fxTimer);fxTimer=null;} }
+function fxDelay(){ return 220 - (parseInt($("#fxSpeed").value,10)-1)*20; } // 1..10 -> 220..40ms
+function hexFrom(r,g,b){ return "#"+[r,g,b].map(x=>Math.max(0,Math.min(255,Math.round(x))).toString(16).padStart(2,"0")).join(""); }
+function startFx(step){
+  stopFx(); fxT=0;
+  const tick=()=>{ fxT++; step(fxT); };
+  fxTimer=setInterval(tick, fxDelay());
+}
+$("#fxSpeed").oninput=()=>{ if(fxTimer){ const s=fxTimer; } }; // velocidad se aplica al reiniciar
+$("#fxBreath").onclick=()=>{ const base=hexToRgb($("#colorPicker").value); startFx(t=>{ const k=(Math.sin(t/6)+1)/2; paintAll(hexFrom(base[0]*k,base[1]*k,base[2]*k)); }); };
+$("#fxBlink").onclick=()=>{ const c=$("#colorPicker").value; startFx(t=>{ paintAll(t%2? c : "#000000"); }); };
+$("#fxFire").onclick=()=>{ startFx(t=>{ const r=200+Math.random()*55, g=40+Math.random()*90; paintAll(hexFrom(r,g,0)); }); };
+$("#fxWave").onclick=()=>{ startFx(t=>{ const rgb=hslToRgb((t*8)%360,0.95,0.5); paintAll(hexFrom(rgb[0],rgb[1],rgb[2])); }); };
+$("#fxStop").onclick=()=>{ stopFx(); paintAll($("#colorPicker").value); };
+
+/* ----- EFECTOS NATIVOS (los corre el hardware del lightstick) ----- */
+function startNative(mode){
+  stopFx(); stopPlayback();
+  const hex=$("#colorPicker").value;
+  let any=false;
+  sticks.forEach(s=>{
+    if(s.type==="BTS_V4 LS"){ s._lastColor=hex; s._nativeMode=mode; s._nativePrime=0; any=true; }
+  });
+  renderSticks();
+  if(!any) diagMsg("Los efectos nativos son solo para el Ver 4.");
+}
+function stopNative(){ sticks.forEach(s=>{ s._nativeMode=null; s._nativePrime=0; }); }
+$("#fxnBreath").onclick=()=>startNative(0x03);
+$("#fxnBlink").onclick =()=>startNative(0x02);
+$("#fxnStrobe").onclick=()=>startNative(0x04);
+$("#fxnStop").onclick  =()=>{ stopNative(); paintAll($("#colorPicker").value); };
+
+// diagMsg: si existe un cartel lo usa; si no, no-op (queda por compatibilidad interna)
+function diagMsg(t){ const e=$("#diagMsg"); if(e) e.textContent=t; }
+// Elige automáticamente la característica de color detectada (handle 0x15). Sin UI.
+function populateCharSelector(chars, colorChar){
+  let colorIdx = 0;
+  chars.forEach((c,i)=>{ if(colorChar && c.uuid===colorChar.uuid) colorIdx = i; });
+  diag.charIndex = colorIdx;
+}
+
+/* ============================================================
+   YOUTUBE SYNC
+   ============================================================ */
+let ytPlayer=null, ytReady=false, clips=[], rafId=null;
+let playing=false, playMode="video", clockStart=0, clockPaused=0, loopSeq=false;
+const FADE=1.2;            // duración por defecto de un fade (seg)
+const seqMsg = t => { const e=$("#seqMsg"); if(e) e.textContent=t; };
+
+function extractVideoId(url){
+  url=url.trim();
+  if(/^[\w-]{11}$/.test(url)) return url;
+  const m=url.match(/(?:v=|\/embed\/|youtu\.be\/|\/shorts\/)([\w-]{11})/);
+  return m?m[1]:null;
+}
+
+// carga la API de YouTube
+const tag=document.createElement("script"); tag.src="https://www.youtube.com/iframe_api";
+document.head.appendChild(tag);
+window.onYouTubeIframeAPIReady=()=>{ ytReady=true; };
+
+function loadYouTube(id){
+  if(!ytReady){ alert("La API de YouTube todavía está cargando, probá de nuevo en un segundo."); return false; }
+  $("#ytUrl").value=id;
+  if(ytPlayer){ ytPlayer.loadVideoById(id); return true; }
+  ytPlayer=new YT.Player("player",{
+    host:"https://www.youtube.com",
+    videoId:id, playerVars:{playsinline:1, enablejsapi:1, origin:location.origin, rel:0},
+    events:{ onStateChange:onPlayerState }
+  });
+  return true;
+}
+$("#loadVideo").onclick=()=>{
+  const id=extractVideoId($("#ytUrl").value);
+  if(!id){ alert("No pude leer el ID del video. Pegá un link de YouTube válido."); return; }
+  loadYouTube(id);
+};
+
+function onPlayerState(e){
+  if(e.data===YT.PlayerState.PLAYING){ startPlayback("video"); }
+  else if(playMode==="video"){ pausePlayback(); }
+}
+
+/* ---------- helpers de color ---------- */
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+function lerp(a,b,p){ return a+(b-a)*p; }
+function scaleRgb(rgb,k){ return [rgb[0]*k,rgb[1]*k,rgb[2]*k]; }
+function rgbToHexF(r,g,b){ return "#"+[r,g,b].map(x=>clamp(Math.round(x),0,255).toString(16).padStart(2,"0")).join(""); }
+function rgbToHsl(r,g,b){
+  r/=255;g/=255;b/=255;
+  const mx=Math.max(r,g,b),mn=Math.min(r,g,b); let h,s,l=(mx+mn)/2;
+  if(mx===mn){ h=0;s=0; }
+  else{ const d=mx-mn; s=l>0.5?d/(2-mx-mn):d/(mx+mn);
+    switch(mx){ case r:h=(g-b)/d+(g<b?6:0);break; case g:h=(b-r)/d+2;break; default:h=(r-g)/d+4; } h/=6; }
+  return [h*360,s,l];
+}
+function hslToRgb(h,s,l){
+  h/=360;
+  const f=(p,q,t)=>{ if(t<0)t+=1; if(t>1)t-=1; if(t<1/6)return p+(q-p)*6*t; if(t<1/2)return q; if(t<2/3)return p+(q-p)*(2/3-t)*6; return p; };
+  let r,g,b;
+  if(s===0){ r=g=b=l; }
+  else{ const q=l<0.5?l*(1+s):l+s-l*s; const p=2*l-q; r=f(p,q,h+1/3); g=f(p,q,h); b=f(p,q,h-1/3); }
+  return [r*255,g*255,b*255];
+}
+
+// efecto aplicado DENTRO de un segmento, según el tiempo local (seg desde que empezó el cue)
+function applyFx(rgb, fx, local){
+  if(fx==="breath"){ const k=0.18+0.82*(0.5+0.5*Math.sin(2*Math.PI*local/2.5)); return scaleRgb(rgb,k); }
+  if(fx==="flash"){ return (local%0.6)<0.3 ? rgb : [0,0,0]; }
+  if(fx==="wave"){ const [h,s,l]=rgbToHsl(rgb[0],rgb[1],rgb[2]); return hslToRgb((h+local*45)%360, s||0.9, l||0.5); }
+  return rgb;
+}
+
+// color instantáneo de la secuencia en t (modelo keyframe: morfea TODO el tramo hacia el
+// próximo cue si ese próximo es "fade"; si es "cut", mantiene el color y salta al llegar).
+function rgbOf(c){ return scaleRgb(hexToRgb(c.color),(c.bright==null?100:c.bright)/100); }
+function scaledHex(c){ const r=rgbOf(c); return rgbToHexF(r[0],r[1],r[2]); }
+function setCurSeq(name){ const e=$("#curSeqName"); if(e) e.textContent=name||"— ninguna —"; }
+function setLivePreview(hex){
+  const e=$("#livePrev"); if(!e) return;
+  e.style.background=hex||"#000";
+  e.style.boxShadow = hex && hex!=="#000000" ? `0 0 22px ${hex}` : "none";
+  const h=$("#livePrevHex"); if(h) h.textContent = hex ? hex.toUpperCase() : "—";
+}
+function computeColorAt(t){
+  if(!clips.length) return null;
+  let i=-1;
+  for(let k=0;k<clips.length;k++){ if(clips[k].time<=t) i=k; else break; }
+  if(i<0) return null;                          // todavía no empezó el primer cue
+  const cur=clips[i];
+  let base=rgbOf(cur);
+  const nxt=clips[i+1];
+  if(nxt && nxt.trans==="fade"){                // morfeo continuo hasta el próximo cue
+    const span=nxt.time-cur.time;
+    const p=span>0 ? clamp((t-cur.time)/span,0,1) : 1;
+    const n=rgbOf(nxt);
+    base=[lerp(base[0],n[0],p), lerp(base[1],n[1],p), lerp(base[2],n[2],p)];
+  }
+  base=applyFx(base, cur.fx||"none", t-cur.time);
+  return rgbToHexF(base[0],base[1],base[2]);
+}
+
+/* ---------- reloj de reproducción ---------- */
+function seqDuration(){ return clips.length ? clips[clips.length-1].time + 4 : 0; }
+function getDuration(){ if(ytPlayer&&ytPlayer.getDuration){ const d=ytPlayer.getDuration(); if(d>0) return d; } return seqDuration()||1; }
+function getPlayTime(){
+  if(playMode==="video" && ytPlayer && ytPlayer.getCurrentTime) return ytPlayer.getCurrentTime();
+  return (performance.now()-clockStart)/1000;
+}
+
+function startPlayback(mode){
+  stopFx();
+  sticks.forEach(s=>{ s._nativeMode=null; });   // la secuencia maneja el color cuadro a cuadro
+  playMode=mode;
+  if(mode==="clock") clockStart=performance.now()-clockPaused*1000;
+  playing=true;
+  $("#syncDot").classList.add("on");
+  if(!rafId) rafId=requestAnimationFrame(syncTick);
+  updatePlayBtn();
+}
+function pausePlayback(){
+  if(playMode==="clock") clockPaused=(performance.now()-clockStart)/1000;
+  playing=false; $("#syncDot").classList.remove("on"); updatePlayBtn();
+}
+function stopPlayback(){
+  playing=false; clockPaused=0; $("#syncDot").classList.remove("on");
+  if(playMode==="video" && ytPlayer && ytPlayer.pauseVideo){ try{ytPlayer.pauseVideo();}catch{} }
+  updatePlayBtn();
+}
+function updatePlayBtn(){ const b=$("#playClock"); if(b) b.textContent=(playing&&playMode==="clock")?T[LANG].pauseClock:T[LANG].playClock; }
+
+let _lastNonV4=0;
+function syncTick(){
+  rafId=requestAnimationFrame(syncTick);
+  if(!playing) return;
+  let t=getPlayTime();
+  if(playMode==="clock" && t>=seqDuration()){
+    if(loopSeq){ clockStart=performance.now(); clockPaused=0; t=0; }
+    else { stopPlayback(); $("#playhead").style.left="0%"; return; }
+  }
+  $("#playhead").style.left=clamp(t/getDuration()*100,0,100)+"%";
+  const hex=computeColorAt(t);
+  if(hex==null) return;
+  setLivePreview(hex);
+  const now=performance.now();
+  const sendNonV4 = now-_lastNonV4>40;
+  sticks.forEach(s=>{
+    s._lastColor=hex;                                  // el keep-alive del V4 lo reenvía solo
+    if(s.type!=="BTS_V4 LS" && sendNonV4) writeColor(s,hex).catch(()=>{});
+  });
+  if(sendNonV4) _lastNonV4=now;
+  if(now-(syncTick._r||0)>140){ syncTick._r=now; renderSticks(); }   // refresca swatches sin saturar
+}
+
+/* ---------- editor de cues ---------- */
+$("#clipBright").oninput=e=>{ $("#clipBrightV").textContent=e.target.value; };
+
+$("#addClip").onclick=()=>{
+  let t;
+  const manual=$("#clipTime").value;
+  if(manual!=="" && !isNaN(parseFloat(manual))) t=parseFloat(manual);
+  else if(playMode==="clock" && playing) t=getPlayTime();
+  else if(ytPlayer&&ytPlayer.getCurrentTime) t=ytPlayer.getCurrentTime();
+  else t=clips.length ? clips[clips.length-1].time+5 : 0;
+  clips.push({
+    time:Math.max(0,t),
+    color:$("#clipColor").value,
+    bright:parseInt($("#clipBright").value,10),
+    trans:$("#clipTrans").value,
+    fx:$("#clipFx").value,
+  });
+  clips.sort((a,b)=>a.time-b.time);
+  $("#clipTime").value="";
+  renderClips();
+};
+$("#clearClips").onclick=()=>{ clips=[]; renderClips(); setCurSeq("— ninguna —"); seqMsg("Secuencia vacía."); };
+
+function fxLabel(fx){ return {breath:"respiración",flash:"flash",wave:"ola"}[fx]||""; }
+function renderClips(){
+  const dur=getDuration();
+  const tl=$("#timeline");
+  tl.querySelectorAll(".clip").forEach(n=>n.remove());
+  // fondo de la línea de tiempo = plan de colores de la secuencia
+  if(clips.length){
+    const stops=clips.map(c=>`${scaledHex(c)} ${clamp(c.time/dur*100,0,100).toFixed(1)}%`);
+    tl.style.background=`linear-gradient(90deg, ${stops.join(", ")})`;
+  } else {
+    tl.style.background="var(--panel2)";
+  }
+  clips.forEach(c=>{
+    const d=document.createElement("div"); d.className="clip";
+    d.style.left=clamp(c.time/dur*100,0,100)+"%";
+    d.style.background="rgba(255,255,255,.7)";     // tick blanco visible sobre el gradiente
+    d.title=`${fmt(c.time)} · ${c.color}${c.trans==="fade"?" · fade":""}`;
+    tl.appendChild(d);
+  });
+  const list=$("#clipsList"); list.innerHTML="";
+  clips.forEach((c,i)=>{
+    const el=document.createElement("div"); el.className="clip-item";
+    const tags=[ (c.bright!=null&&c.bright<100)?`${c.bright}%`:"", c.trans==="fade"?"fade":"", fxLabel(c.fx) ].filter(Boolean).join(" · ");
+    el.innerHTML=`<span class="sw" style="background:${c.color}"></span>
+      <span class="t" title="saltar (con video)">${fmt(c.time)}</span>
+      <span>${c.color}</span><span style="color:var(--muted);font-size:12px">${tags}</span>
+      <button class="x">✕</button>`;
+    el.querySelector(".x").onclick=()=>{ clips.splice(i,1); renderClips(); };
+    el.querySelector(".t").onclick=()=>{ if(ytPlayer&&ytPlayer.seekTo) ytPlayer.seekTo(c.time,true); };
+    list.appendChild(el);
+  });
+}
+function fmt(t){ const m=Math.floor(t/60),s=Math.floor(t%60); return `${m}:${String(s).padStart(2,"0")}`; }
+
+/* ---------- play / stop / loop ---------- */
+$("#playClock").onclick=()=>{
+  if(!clips.length){ seqMsg("Cargá una secuencia o agregá cues primero."); return; }
+  if(playing && playMode==="clock") pausePlayback();
+  else startPlayback("clock");
+};
+$("#stopClock").onclick=()=>{ stopPlayback(); $("#playhead").style.left="0%"; };
+$("#loopChk").onchange=e=>{ loopSeq=e.target.checked; };
+
+/* ---------- secuencias de ejemplo (fan-made) ---------- */
+const EXAMPLES = {
+  "💜 Ola Púrpura (ARMY ocean)": { loop:true, clips:[
+    {time:0,  color:"#7c3aed", bright:90, trans:"fade", fx:"breath"},
+    {time:14, color:"#a78bfa", bright:80, trans:"fade", fx:"breath"},
+    {time:28, color:"#6d28d9", bright:95, trans:"fade", fx:"breath"},
+    {time:42, color:"#7c3aed", bright:90, trans:"fade", fx:"breath"},
+  ]},
+  "🌈 Arcoíris": { loop:true, clips:[
+    {time:0,  color:"#ff0000", bright:100, trans:"fade", fx:"none"},
+    {time:5,  color:"#ff7a00", bright:100, trans:"fade", fx:"none"},
+    {time:10, color:"#ffd500", bright:100, trans:"fade", fx:"none"},
+    {time:15, color:"#00ff00", bright:100, trans:"fade", fx:"none"},
+    {time:20, color:"#00d5ff", bright:100, trans:"fade", fx:"none"},
+    {time:25, color:"#0000ff", bright:100, trans:"fade", fx:"none"},
+    {time:30, color:"#ff00ff", bright:100, trans:"fade", fx:"none"},
+    {time:35, color:"#ff0000", bright:100, trans:"fade", fx:"none"},
+  ]},
+  "🔥 Fuego / Energía": { loop:true, clips:[
+    {time:0,  color:"#ff2200", bright:100, trans:"cut",  fx:"flash"},
+    {time:4,  color:"#ff7a00", bright:100, trans:"cut",  fx:"flash"},
+    {time:8,  color:"#ffd500", bright:100, trans:"cut",  fx:"flash"},
+    {time:12, color:"#ff5500", bright:100, trans:"fade", fx:"wave"},
+    {time:22, color:"#ff0000", bright:100, trans:"cut",  fx:"flash"},
+    {time:28, color:"#ff7a00", bright:100, trans:"fade", fx:"wave"},
+  ]},
+  "🌙 Balada / Calma": { loop:true, clips:[
+    {time:0,  color:"#00a2ff", bright:55, trans:"fade", fx:"breath"},
+    {time:14, color:"#7c3aed", bright:50, trans:"fade", fx:"breath"},
+    {time:28, color:"#00ffd5", bright:45, trans:"fade", fx:"breath"},
+    {time:42, color:"#0000ff", bright:55, trans:"fade", fx:"breath"},
+  ]},
+  "🪩 Fiesta": { loop:true, clips:[
+    {time:0,  color:"#ff00ff", bright:100, trans:"cut", fx:"flash"},
+    {time:2,  color:"#00ffff", bright:100, trans:"cut", fx:"flash"},
+    {time:4,  color:"#ffff00", bright:100, trans:"cut", fx:"flash"},
+    {time:6,  color:"#00ff66", bright:100, trans:"cut", fx:"wave"},
+    {time:12, color:"#ff1493", bright:100, trans:"cut", fx:"flash"},
+    {time:16, color:"#7c3aed", bright:100, trans:"cut", fx:"wave"},
+  ]},
+};
+(function fillExamples(){
+  const sel=$("#exampleSeq");
+  for(const name of Object.keys(EXAMPLES)){
+    const o=document.createElement("option"); o.value=name; o.textContent=name; sel.appendChild(o);
+  }
+})();
+$("#loadExample").onclick=()=>{
+  const ex=EXAMPLES[$("#exampleSeq").value]; if(!ex) return;
+  clips=ex.clips.map(c=>({...c}));
+  loopSeq=!!ex.loop; $("#loopChk").checked=loopSeq;
+  renderClips();
+  setCurSeq(`${$("#exampleSeq").value} (ejemplo · ${clips.length} cues)`);
+  seqMsg(`Cargué "${$("#exampleSeq").value}". Conectá el lightstick y tocá ▶ Play sin video (o cargá un video y dale play).`);
+};
+
+/* ---------- export / import ---------- */
+$("#exportSeq").onclick=()=>{
+  if(!clips.length){ seqMsg("No hay nada para exportar."); return; }
+  const data={video:$("#ytUrl").value, loop:loopSeq, clips};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="secuencia-lightstick.json"; a.click();
+};
+$("#importSeq").onclick=()=>$("#importFile").click();
+$("#importFile").onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{ try{
+    const d=JSON.parse(rd.result);
+    clips=(d.clips||[]).map(c=>({time:c.time||0,color:c.color||"#ffffff",bright:c.bright==null?100:c.bright,trans:c.trans||"cut",fx:c.fx||"none"}));
+    if(d.video) $("#ytUrl").value=d.video;
+    if(d.loop!=null){ loopSeq=!!d.loop; $("#loopChk").checked=loopSeq; }
+    renderClips(); setCurSeq(`Importada (${clips.length} cues)`); seqMsg(`Importé ${clips.length} cues.`);
+  }catch{ alert("Archivo inválido."); } };
+  rd.readAsText(f);
+};
+
+/* ============================================================
+   GALERÍA DE CANCIONES (MV real + secuencia fan-made por secciones)
+   cue = [tiempo_seg, color, brillo, transición, efecto]
+   ============================================================ */
+const SONGS = {
+  "Dynamite": { pack:"Bailable", id:"gdZLi9oWNZg", album:"BE", cues:[
+    [0,"#FFD500",80,"fade","breath"],[12,"#FF7AD5",100,"cut","none"],[26,"#00D5FF",100,"fade","none"],
+    [40,"#FFD500",100,"cut","flash"],[48,"#FF2D9B",100,"cut","flash"],[56,"#00FFAA",100,"cut","flash"],
+    [64,"#FFD500",100,"fade","wave"],[78,"#FF7AD5",100,"cut","none"],[92,"#00D5FF",100,"fade","none"],
+    [106,"#FFD500",100,"cut","flash"],[120,"#FF2D9B",100,"cut","flash"],[134,"#7C3AED",100,"fade","breath"],
+    [150,"#FFD500",100,"cut","flash"],[170,"#00FFAA",100,"cut","flash"],[190,"#FFD500",80,"fade","breath"] ]},
+  "Butter": { pack:"Bailable", id:"WMweEpGlu_U", album:"Butter", cues:[
+    [0,"#FFE066",70,"fade","breath"],[10,"#FFD500",100,"cut","none"],[22,"#FFC000",100,"fade","none"],
+    [34,"#FFD500",100,"cut","flash"],[44,"#FF9E3D",100,"cut","none"],[54,"#FFD500",100,"fade","wave"],
+    [66,"#FFE066",90,"fade","breath"],[80,"#FFD500",100,"cut","flash"],[92,"#FF7AD5",100,"cut","none"],
+    [104,"#7C3AED",100,"fade","breath"],[116,"#FFD500",100,"cut","flash"],[130,"#FFC000",80,"fade","breath"] ]},
+  "IDOL": { pack:"Bailable", id:"pBuZEGYXA6E", album:"LY: Answer", cues:[
+    [0,"#FF0000",90,"cut","flash"],[8,"#0033FF",100,"cut","flash"],[16,"#FFD500",100,"cut","flash"],
+    [26,"#FF0000",100,"cut","flash"],[36,"#00C853",100,"cut","flash"],[46,"#FF00FF",100,"cut","flash"],
+    [56,"#FFD500",100,"fade","wave"],[70,"#0033FF",100,"cut","none"],[84,"#FF0000",100,"cut","flash"],
+    [98,"#00C853",100,"cut","flash"],[112,"#FF6F00",100,"fade","wave"],[130,"#FF0000",100,"cut","flash"],
+    [150,"#FFD500",100,"cut","flash"],[168,"#FF00FF",90,"fade","breath"] ]},
+  "Permission to Dance": { pack:"Bailable", id:"CuklIb9d3fI", album:"Butter", cues:[
+    [0,"#FFE066",70,"fade","breath"],[14,"#66C2FF",100,"cut","none"],[28,"#FFD500",100,"fade","none"],
+    [44,"#66E0A3",100,"cut","flash"],[56,"#FFB347",100,"cut","none"],[68,"#66C2FF",100,"fade","wave"],
+    [82,"#FFD500",100,"cut","none"],[98,"#66E0A3",100,"cut","flash"],[112,"#FF8FA3",100,"cut","none"],
+    [126,"#FFD500",100,"fade","breath"],[142,"#66E0A3",100,"cut","flash"],[162,"#FFE066",70,"fade","breath"] ]},
+  "Boy With Luv": { pack:"Clásicos", id:"XsX3ATc3FbA", album:"MOTS: Persona", cues:[
+    [0,"#FFB3D9",70,"fade","breath"],[14,"#FF8FBF",100,"cut","none"],[30,"#FFD1DC",100,"fade","none"],
+    [46,"#FF6FB5",100,"cut","flash"],[58,"#FFC0CB",100,"fade","wave"],[72,"#9FFFE0",100,"cut","none"],
+    [88,"#FF8FBF",100,"cut","none"],[104,"#FF6FB5",100,"cut","flash"],[120,"#FFD1DC",100,"fade","none"],
+    [134,"#C9A7FF",100,"fade","breath"],[150,"#FF6FB5",100,"cut","flash"],[170,"#FFB3D9",70,"fade","breath"] ]},
+  "DNA": { pack:"Clásicos", id:"MBdVXkSdhwU", album:"LY: Her", cues:[
+    [0,"#FF00FF",70,"fade","breath"],[12,"#00E5FF",100,"cut","none"],[26,"#AEFF00",100,"fade","none"],
+    [40,"#FF00FF",100,"cut","flash"],[50,"#00E5FF",100,"cut","flash"],[60,"#FFD500",100,"fade","wave"],
+    [74,"#FF00AA",100,"cut","none"],[90,"#00E5FF",100,"cut","flash"],[104,"#AEFF00",100,"cut","none"],
+    [118,"#7C3AED",100,"fade","breath"],[134,"#FF00FF",100,"cut","flash"],[154,"#00E5FF",90,"fade","breath"] ]},
+  "FAKE LOVE": { pack:"Clásicos", id:"7C2z4GqqS5E", album:"LY: Tear", cues:[
+    [0,"#6A0033",60,"fade","breath"],[16,"#B00030",100,"cut","none"],[32,"#3A0A6A",100,"fade","none"],
+    [48,"#FF0033",100,"cut","flash"],[60,"#7C0AED",100,"fade","wave"],[74,"#4B0082",100,"cut","none"],
+    [92,"#B00030",100,"cut","none"],[108,"#FF0033",100,"cut","flash"],[124,"#3A0A6A",100,"fade","breath"],
+    [142,"#FF0033",100,"cut","flash"],[160,"#6A0033",100,"cut","flash"],[178,"#2A0A3A",50,"fade","breath"] ]},
+  "MIC Drop": { pack:"Clásicos", id:"kTlv5_Bs8aw", album:"LY: Her", cues:[
+    [0,"#FF2200",90,"cut","flash"],[10,"#FF7A00",100,"cut","flash"],[20,"#FFD500",100,"cut","flash"],
+    [30,"#FF0000",100,"cut","flash"],[42,"#FFFFFF",100,"cut","flash"],[54,"#FF7A00",100,"fade","wave"],
+    [70,"#FF0000",100,"cut","flash"],[88,"#FFD500",100,"cut","flash"],[104,"#FF2200",100,"cut","flash"],
+    [120,"#FFFFFF",100,"cut","flash"],[136,"#FF0000",100,"cut","flash"],[156,"#FF2200",80,"fade","breath"] ]},
+  "Spring Day": { pack:"Emotivas", id:"xEeFrLSkMm8", album:"YNWA", cues:[
+    [0,"#BFE0FF",60,"fade","breath"],[18,"#7FB3FF",90,"fade","none"],[36,"#FFFFFF",80,"fade","none"],
+    [54,"#9FE0D0",90,"fade","none"],[72,"#FFD9A0",90,"fade","breath"],[90,"#7FB3FF",90,"fade","none"],
+    [110,"#BFE0FF",90,"fade","none"],[130,"#9FE0D0",100,"fade","none"],[150,"#C9A7FF",90,"fade","breath"],
+    [172,"#7FB3FF",90,"fade","none"],[196,"#FFFFFF",70,"fade","breath"],[220,"#BFE0FF",50,"fade","breath"] ]},
+  "Life Goes On": { pack:"Emotivas", id:"-5q5mZbe3V8", album:"BE", cues:[
+    [0,"#C9A7FF",60,"fade","breath"],[14,"#9F7FFF",90,"fade","none"],[30,"#7FB3FF",90,"fade","none"],
+    [46,"#C9A7FF",100,"fade","none"],[62,"#FFD9C0",90,"fade","breath"],[78,"#9F7FFF",90,"fade","none"],
+    [96,"#7FB3FF",90,"fade","none"],[112,"#C9A7FF",100,"fade","none"],[128,"#FFFFFF",80,"fade","breath"],
+    [146,"#C9A7FF",90,"fade","none"],[170,"#9F7FFF",50,"fade","breath"] ]},
+  "Black Swan": { pack:"Emotivas", id:"0lapF4DQPKQ", album:"MOTS: 7", cues:[
+    [0,"#1A0A2A",50,"fade","breath"],[14,"#4B0082",90,"fade","none"],[28,"#2A0A4A",90,"fade","none"],
+    [42,"#7C3AED",100,"cut","none"],[54,"#FFFFFF",80,"cut","flash"],[66,"#2A0A4A",90,"fade","wave"],
+    [82,"#4B0082",90,"fade","none"],[98,"#7C3AED",100,"cut","flash"],[112,"#1A0A2A",70,"fade","breath"],
+    [130,"#7C3AED",100,"cut","none"],[150,"#FFFFFF",60,"fade","breath"],[168,"#1A0A2A",40,"fade","breath"] ]},
+  "ON": { pack:"Emotivas", id:"gwMa6gpoE9I", album:"MOTS: 7", cues:[
+    [0,"#FF6F00",70,"fade","breath"],[14,"#FFB000",100,"cut","none"],[28,"#FF3D00",100,"cut","flash"],
+    [40,"#FFD500",100,"cut","flash"],[52,"#FFFFFF",100,"cut","flash"],[66,"#FF6F00",100,"fade","wave"],
+    [82,"#FFB000",100,"cut","none"],[100,"#FF3D00",100,"cut","flash"],[116,"#FFD500",100,"cut","flash"],
+    [132,"#FF0000",100,"fade","breath"],[150,"#FFD500",100,"cut","flash"],[170,"#FFFFFF",100,"cut","flash"],
+    [190,"#FF6F00",70,"fade","breath"] ]},
+  "Fire": { pack:"Bailable", id:"4ujQOR2DMFM", album:"Young Forever", cues:[
+    [0,"#FF2200",80,"fade","breath"],[10,"#FF6A00",100,"cut","flash"],[20,"#FFD500",100,"cut","flash"],
+    [30,"#FF0000",100,"cut","flash"],[42,"#FF6A00",100,"fade","wave"],[58,"#FF2200",100,"cut","flash"],
+    [74,"#FFD500",100,"cut","flash"],[90,"#FF0000",100,"cut","flash"],[104,"#FF6A00",100,"fade","wave"],
+    [120,"#FF2200",100,"cut","flash"],[140,"#FF2200",80,"fade","breath"] ]},
+  "Not Today": { pack:"Bailable", id:"9DwzBICPhdM", album:"You Never Walk Alone", cues:[
+    [0,"#FF0000",90,"cut","flash"],[8,"#FFFFFF",100,"cut","flash"],[16,"#FF0000",100,"cut","flash"],
+    [26,"#FF3D00",100,"cut","flash"],[38,"#FFFFFF",100,"cut","flash"],[50,"#FF0000",100,"fade","wave"],
+    [66,"#FF0000",100,"cut","flash"],[82,"#FFD500",100,"cut","flash"],[98,"#FF0000",100,"cut","flash"],
+    [114,"#FFFFFF",100,"cut","flash"],[130,"#FF0000",80,"fade","breath"] ]},
+  "Hooligan": { pack:"Bailable", id:"diBO0gMuTXo", album:"Arirang", cues:[
+    [0,"#1A0000",60,"fade","breath"],[10,"#FF0000",100,"cut","flash"],[20,"#FFFFFF",100,"cut","flash"],
+    [30,"#B00020",100,"cut","none"],[42,"#FF0000",100,"cut","flash"],[56,"#1A0000",80,"fade","wave"],
+    [72,"#FF0000",100,"cut","flash"],[88,"#FFFFFF",100,"cut","flash"],[104,"#B00020",100,"fade","breath"],
+    [120,"#FF0000",100,"cut","flash"],[138,"#1A0000",50,"fade","breath"] ]},
+  "Blood Sweat & Tears": { pack:"Clásicos", id:"hmE9f-TEutc", album:"Wings", cues:[
+    [0,"#3A0A5A",60,"fade","breath"],[14,"#C0A000",90,"fade","none"],[28,"#8A0030",100,"fade","none"],
+    [42,"#7C3AED",100,"fade","wave"],[56,"#C0A000",100,"cut","none"],[70,"#8A0030",100,"fade","breath"],
+    [86,"#3A0A5A",90,"fade","none"],[102,"#C0A000",100,"fade","none"],[118,"#7C3AED",100,"fade","breath"],
+    [134,"#8A0030",90,"fade","breath"],[150,"#3A0A5A",50,"fade","breath"] ]},
+  "Run": { pack:"Clásicos", id:"wKysONrSmew", album:"The Most Beautiful Moment Pt.2", cues:[
+    [0,"#2E6FB0",70,"fade","breath"],[14,"#FF3355",100,"cut","none"],[28,"#7C3AED",100,"fade","none"],
+    [42,"#2E6FB0",100,"cut","flash"],[56,"#FF3355",100,"fade","wave"],[72,"#7C3AED",100,"cut","none"],
+    [88,"#2E6FB0",100,"cut","flash"],[104,"#FF3355",100,"fade","none"],[120,"#7C3AED",100,"fade","breath"],
+    [140,"#2E6FB0",60,"fade","breath"] ]},
+  "Save Me": { pack:"Emotivas", id:"GZjt_sA2eso", album:"Young Forever", cues:[
+    [0,"#1A2A4A",55,"fade","breath"],[14,"#2E6FB0",85,"fade","none"],[30,"#5AC8C8",95,"fade","none"],
+    [46,"#FFFFFF",90,"fade","none"],[62,"#FFB3C8",90,"fade","breath"],[78,"#2E6FB0",90,"fade","none"],
+    [94,"#5AC8C8",100,"fade","none"],[110,"#FFFFFF",90,"fade","breath"],[126,"#7FB3FF",90,"fade","none"],
+    [148,"#1A2A4A",50,"fade","breath"] ]},
+  "Yet To Come": { pack:"Emotivas", id:"kXpOEzNZ8hQ", album:"Proof", cues:[
+    [0,"#FFB060",60,"fade","breath"],[16,"#FFD9A0",85,"fade","none"],[34,"#7FB3FF",90,"fade","none"],
+    [52,"#C9A7FF",95,"fade","none"],[70,"#FFB060",90,"fade","breath"],[88,"#7FB3FF",90,"fade","none"],
+    [106,"#FFD9A0",95,"fade","none"],[124,"#C9A7FF",100,"fade","breath"],[144,"#FFB060",60,"fade","breath"] ]},
+  "Seven (Jung Kook)": { pack:"Solos", id:"QU9c0053UAU", album:"GOLDEN", cues:[
+    [0,"#00D5FF",75,"fade","breath"],[12,"#FFE24D",100,"cut","none"],[24,"#FF6FB5",100,"fade","none"],
+    [36,"#00D5FF",100,"cut","flash"],[48,"#FFE24D",100,"fade","wave"],[62,"#FF6FB5",100,"cut","none"],
+    [76,"#00D5FF",100,"cut","flash"],[90,"#FFE24D",100,"fade","none"],[104,"#FF6FB5",100,"fade","breath"],
+    [120,"#00D5FF",70,"fade","breath"] ]},
+  "Standing Next to You (JK)": { pack:"Solos", id:"UNo0TG9LwwI", album:"GOLDEN", cues:[
+    [0,"#7C3AED",80,"fade","breath"],[10,"#FF00AA",100,"cut","flash"],[22,"#FFC000",100,"cut","none"],
+    [34,"#7C3AED",100,"cut","flash"],[46,"#FF00AA",100,"fade","wave"],[60,"#FFC000",100,"cut","flash"],
+    [74,"#7C3AED",100,"cut","none"],[88,"#FF00AA",100,"cut","flash"],[102,"#FFC000",100,"fade","none"],
+    [116,"#7C3AED",70,"fade","breath"] ]},
+  "Like Crazy (Jimin)": { pack:"Solos", id:"nOI67IDlNMQ", album:"FACE", cues:[
+    [0,"#1A0A3A",60,"fade","breath"],[12,"#FF00AA",100,"cut","none"],[24,"#3355FF",100,"fade","none"],
+    [36,"#C040FF",100,"cut","flash"],[48,"#FF00AA",100,"fade","wave"],[62,"#3355FF",100,"cut","none"],
+    [76,"#C040FF",100,"cut","flash"],[90,"#FF00AA",100,"fade","none"],[104,"#1A0A3A",70,"fade","breath"],
+    [120,"#C040FF",80,"fade","breath"] ]},
+  "Haegeum (Agust D)": { pack:"Solos", id:"iy9qZR_OGa0", album:"D-DAY", cues:[
+    [0,"#1A0000",60,"fade","breath"],[10,"#FF0000",100,"cut","flash"],[20,"#FFC000",100,"cut","none"],
+    [30,"#FF2200",100,"cut","flash"],[44,"#FFC000",100,"fade","wave"],[60,"#FF0000",100,"cut","flash"],
+    [76,"#1A0000",80,"fade","breath"],[90,"#FF0000",100,"cut","flash"],[106,"#FFC000",100,"cut","none"],
+    [122,"#FF2200",80,"fade","breath"] ]},
+  "on the street (j-hope)": { pack:"Solos", id:"r6WbbU_lLCA", album:"Hope on the Street", cues:[
+    [0,"#2E8B57",65,"fade","breath"],[16,"#9FD9A0",90,"fade","none"],[32,"#FFD9A0",90,"fade","none"],
+    [48,"#FFB060",95,"fade","breath"],[64,"#2E8B57",90,"fade","none"],[80,"#9FD9A0",95,"fade","none"],
+    [96,"#FFD9A0",90,"fade","breath"],[114,"#2E8B57",60,"fade","breath"] ]},
+};
+
+let community={};
+try{ community=JSON.parse(localStorage.getItem("lscommunity")||"{}"); }catch(e){ community={}; }
+
+function songEntries(pack){
+  const out=[];
+  for(const [name,s] of Object.entries(SONGS))
+    if(pack==="all"||s.pack===pack) out.push({name,id:s.id,sub:`${s.album} · ${s.pack}`,community:false});
+  for(const [name,s] of Object.entries(community))
+    if(pack==="all"||pack==="Comunidad") out.push({name,id:s.video,sub:`comunidad · ${s.clips.length} cues`,community:true});
+  return out;
+}
+function renderGallery(pack="all"){
+  const g=$("#gallery"); g.innerHTML="";
+  const list=songEntries(pack);
+  if(!list.length){ g.innerHTML='<div class="hint">No hay canciones en este filtro. Importá un pack de comunidad.</div>'; return; }
+  for(const e of list){
+    const card=document.createElement("button"); card.className="song";
+    card.innerHTML=`<img loading="lazy" src="https://img.youtube.com/vi/${e.id}/mqdefault.jpg" alt="">
+      <div class="meta"><div class="ti">${e.name}</div><div class="al">${e.sub}</div></div>`;
+    card.onclick=()=>loadSong(e.name, e.community);
+    g.appendChild(card);
+  }
+}
+function loadSong(name, isCommunity){
+  stopFx(); stopNative(); stopPlayback();
+  let id;
+  if(isCommunity && community[name]){ clips=community[name].clips.map(c=>({...c})); id=community[name].video; }
+  else { const s=SONGS[name]; if(!s) return; clips=s.cues.map(c=>({time:c[0],color:c[1],bright:c[2],trans:c[3],fx:c[4]})); id=s.id; }
+  loopSeq=false; $("#loopChk").checked=false;
+  renderClips();
+  setCurSeq(`${name} (${isCommunity?"comunidad":"galería"} · ${clips.length} cues)`);
+  const ok=loadYouTube(id);
+  seqMsg(`🎵 "${name}" cargada (${clips.length} cues). ${ok?"Conectá el ARMY Bomb y dale PLAY al video.":"Esperá YouTube y reintentá."}`);
+  $("#player").scrollIntoView({behavior:"smooth",block:"center"});
+}
+renderGallery();
+
+// IDIOMA: aplicar el guardado y conectar el selector
+$("#langSel").value = LANG;
+$("#langSel").onchange = e => applyLang(e.target.value);
+applyLang(LANG);
+
+// AUTO-CARGA del pack de comunidad: si "borawaves_pack.json" está en la misma carpeta,
+// se levanta solo al abrir (sin importar a mano). Serví el HTML junto a ese .json.
+(function autoloadPack(){
+  fetch("borawaves_pack.json").then(r=>r.ok?r.json():null).then(data=>{
+    if(!data) return;
+    let n=0;
+    (Array.isArray(data)?data:[data]).forEach(s=>{ if(s&&s.name&&Array.isArray(s.clips)){ community[s.name]={video:s.video||"",clips:s.clips}; n++; } });
+    if(n){ localStorage.setItem("lscommunity", JSON.stringify(community));
+      renderGallery();
+      seqMsg(`✅ Cargué ${n} secuencias de la comunidad.`);
+    }
+  }).catch(()=>{});
+})();
+</script>
+</body>
+</html>
