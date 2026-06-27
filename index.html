@@ -220,8 +220,12 @@
   <!-- ☕ DONACIÓN: cambiá el href por tu link (Cafecito / Ko-fi / PayPal.me) -->
   <div style="text-align:center;margin-top:22px">
     <a id="donateBtn" href="https://cafecito.app/elgto" target="_blank" rel="noopener"
-       style="display:inline-block;background:var(--purple);color:#fff;border:1px solid var(--purple);border-radius:12px;padding:11px 20px;text-decoration:none;font-weight:600">
+       style="display:inline-block;background:var(--purple);color:#fff;border:1px solid var(--purple);border-radius:12px;padding:11px 20px;text-decoration:none;font-weight:600;margin:4px">
        <span data-i18n="donate">☕ Invitame un cafecito</span>
+    </a>
+    <a id="contactBtn" href="https://x.com/eLGatoS0" target="_blank" rel="noopener"
+       style="display:inline-block;background:var(--panel2);color:var(--txt);border:1px solid var(--border);border-radius:12px;padding:11px 20px;text-decoration:none;font-weight:600;margin:4px">
+       <span data-i18n="contact">✉️ Contacto</span>
     </a>
   </div>
 
@@ -475,7 +479,7 @@ const T = {
     addClip:"➕ Agregar cue", clearClips:"🗑 Limpiar", exportSeq:"⬇️ Exportar", importSeq:"⬆️ Importar",
     curcolor_label:"Color actual",
     yt_hint:"Cargá un video de YouTube y dale play (sincroniza al video), o usá <b>Play sin video</b> (reloj interno). Tocá una hora de la lista para saltar ahí.",
-    footer:"Proyecto personal de fan, no oficial. Compatible con ARMY Bomb Ver 3, Ver 4 y SE/multiM.", donate:"☕ Invitame un cafecito",
+    footer:"Proyecto personal de fan, no oficial. Compatible con ARMY Bomb Ver 3, Ver 4 y SE/multiM.", donate:"☕ Invitame un cafecito", contact:"✉️ Contacto",
     terms_title:"Términos y condiciones",
     terms_text:"Proyecto de fan sin fines de lucro y NO oficial. No está afiliado, asociado ni respaldado por BTS, HYBE ni BIGHIT MUSIC. Las marcas 'ARMY Bomb', 'BTS' y relacionadas pertenecen a sus dueños. Las secuencias de luces son hechas por fans y se ofrecen tal cual, sin garantía. Este sitio no aloja música ni videos: el contenido de YouTube pertenece a sus autores y se reproduce desde YouTube. Usalo bajo tu propia responsabilidad; no nos hacemos responsables por daños ni por el funcionamiento del lightstick. Al usar este sitio aceptás estos términos.",
     st_scan:"Buscando…", st_conn:"Conectado", st_err:"Error: ", st_disc:"Desconectado" },
@@ -510,7 +514,7 @@ const T = {
     addClip:"➕ Add cue", clearClips:"🗑 Clear", exportSeq:"⬇️ Export", importSeq:"⬆️ Import",
     curcolor_label:"Current color",
     yt_hint:"Load a YouTube video and press play (syncs to the video), or use <b>Play without video</b> (internal clock). Tap a time in the list to jump there.",
-    footer:"Personal, unofficial fan project. Compatible with ARMY Bomb Ver 3, Ver 4 and SE/multiM.", donate:"☕ Buy me a coffee",
+    footer:"Personal, unofficial fan project. Compatible with ARMY Bomb Ver 3, Ver 4 and SE/multiM.", donate:"☕ Buy me a coffee", contact:"✉️ Contact",
     terms_title:"Terms & conditions",
     terms_text:"Non-profit, UNOFFICIAL fan project. Not affiliated with, associated with, or endorsed by BTS, HYBE or BIGHIT MUSIC. 'ARMY Bomb', 'BTS' and related marks belong to their owners. Light sequences are fan-made and provided as-is, without warranty. This site hosts no music or video: YouTube content belongs to its creators and plays from YouTube. Use at your own risk; we are not liable for any damage or for the lightstick's behavior. By using this site you accept these terms.",
     st_scan:"Scanning…", st_conn:"Connected", st_err:"Error: ", st_disc:"Disconnected" },
@@ -545,7 +549,7 @@ const T = {
     addClip:"➕ Adicionar cue", clearClips:"🗑 Limpar", exportSeq:"⬇️ Exportar", importSeq:"⬆️ Importar",
     curcolor_label:"Cor atual",
     yt_hint:"Carregue um vídeo do YouTube e dê play (sincroniza ao vídeo), ou use <b>Tocar sem vídeo</b> (relógio interno). Toque num tempo da lista para pular.",
-    footer:"Projeto pessoal de fã, não oficial. Compatível com ARMY Bomb Ver 3, Ver 4 e SE/multiM.", donate:"☕ Me paga um cafézinho",
+    footer:"Projeto pessoal de fã, não oficial. Compatível com ARMY Bomb Ver 3, Ver 4 e SE/multiM.", donate:"☕ Me paga um cafézinho", contact:"✉️ Contato",
     terms_title:"Termos e condições",
     terms_text:"Projeto de fã sem fins lucrativos e NÃO oficial. Não é afiliado, associado nem endossado por BTS, HYBE ou BIGHIT MUSIC. As marcas 'ARMY Bomb', 'BTS' e relacionadas pertencem aos seus donos. As sequências de luz são feitas por fãs e oferecidas como estão, sem garantia. Este site não hospeda música nem vídeo: o conteúdo do YouTube pertence aos seus autores e é reproduzido pelo YouTube. Use por sua conta e risco; não nos responsabilizamos por danos nem pelo funcionamento do lightstick. Ao usar este site você aceita estes termos.",
     st_scan:"Procurando…", st_conn:"Conectado", st_err:"Erro: ", st_disc:"Desconectado" },
@@ -566,7 +570,11 @@ function applyLang(lang){
   localStorage.setItem("lslang", lang);
 }
 
-if (!navigator.bluetooth) $("#nosupport").style.display = "block";
+if (!navigator.bluetooth){
+  const d=$("#nosupport"); d.style.display="block";
+  const isiOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+  d.innerHTML += `<div style="margin-top:8px;font-size:12px;opacity:.85">⚙️ Diag: <b>navigator.bluetooth = ${typeof navigator.bluetooth}</b>${isiOS?" · iOS detectado → abrí esta página DENTRO de la app Bluefy (no Safari)":""}<br>${navigator.userAgent}</div>`;
+}
 
 // KEEP-ALIVE CONTINUO: el Ver 4 vuelve a su color por defecto muy rápido si deja de
 // recibir comandos. Reenviamos el color sin pausa (como la app oficial), esperando a que
