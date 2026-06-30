@@ -234,7 +234,11 @@
     <p data-i18n="terms_text" style="margin:10px 0 0"></p>
   </details>
 
-  <div class="footer" data-i18n="footer" style="margin-top:14px">
+  <div style="text-align:center;color:var(--muted);font-size:12px;margin-top:10px">
+    <span data-i18n="visits_label">Visitas</span>: <span id="visitCount">…</span>
+  </div>
+
+  <div class="footer" data-i18n="footer" style="margin-top:8px">
     Proyecto personal de fan, no oficial. Protocolo compatible con ARMY Bomb Ver 3, Ver 4 y SE/multiM.
   </div>
 </div>
@@ -479,7 +483,7 @@ const T = {
     addClip:"➕ Agregar cue", clearClips:"🗑 Limpiar", exportSeq:"⬇️ Exportar", importSeq:"⬆️ Importar",
     curcolor_label:"Color actual",
     yt_hint:"Cargá un video de YouTube y dale play (sincroniza al video), o usá <b>Play sin video</b> (reloj interno). Tocá una hora de la lista para saltar ahí.",
-    footer:"Proyecto personal de fan, no oficial. Compatible con ARMY Bomb Ver 3, Ver 4 y SE/multiM.", donate:"☕ Invitame un cafecito", contact:"✉️ Contacto",
+    footer:"Proyecto personal de fan, no oficial. Compatible con ARMY Bomb Ver 3, Ver 4 y SE/multiM.", donate:"☕ Invitame un cafecito", contact:"✉️ Contacto", visits_label:"Visitas",
     terms_title:"Términos y condiciones",
     terms_text:"Proyecto de fan sin fines de lucro y NO oficial. No está afiliado, asociado ni respaldado por BTS, HYBE ni BIGHIT MUSIC. Las marcas 'ARMY Bomb', 'BTS' y relacionadas pertenecen a sus dueños. Las secuencias de luces son hechas por fans y se ofrecen tal cual, sin garantía. Este sitio no aloja música ni videos: el contenido de YouTube pertenece a sus autores y se reproduce desde YouTube. Usalo bajo tu propia responsabilidad; no nos hacemos responsables por daños ni por el funcionamiento del lightstick. Al usar este sitio aceptás estos términos.",
     st_scan:"Buscando…", st_conn:"Conectado", st_err:"Error: ", st_disc:"Desconectado" },
@@ -514,7 +518,7 @@ const T = {
     addClip:"➕ Add cue", clearClips:"🗑 Clear", exportSeq:"⬇️ Export", importSeq:"⬆️ Import",
     curcolor_label:"Current color",
     yt_hint:"Load a YouTube video and press play (syncs to the video), or use <b>Play without video</b> (internal clock). Tap a time in the list to jump there.",
-    footer:"Personal, unofficial fan project. Compatible with ARMY Bomb Ver 3, Ver 4 and SE/multiM.", donate:"☕ Buy me a coffee", contact:"✉️ Contact",
+    footer:"Personal, unofficial fan project. Compatible with ARMY Bomb Ver 3, Ver 4 and SE/multiM.", donate:"☕ Buy me a coffee", contact:"✉️ Contact", visits_label:"Visits",
     terms_title:"Terms & conditions",
     terms_text:"Non-profit, UNOFFICIAL fan project. Not affiliated with, associated with, or endorsed by BTS, HYBE or BIGHIT MUSIC. 'ARMY Bomb', 'BTS' and related marks belong to their owners. Light sequences are fan-made and provided as-is, without warranty. This site hosts no music or video: YouTube content belongs to its creators and plays from YouTube. Use at your own risk; we are not liable for any damage or for the lightstick's behavior. By using this site you accept these terms.",
     st_scan:"Scanning…", st_conn:"Connected", st_err:"Error: ", st_disc:"Disconnected" },
@@ -549,7 +553,7 @@ const T = {
     addClip:"➕ Adicionar cue", clearClips:"🗑 Limpar", exportSeq:"⬇️ Exportar", importSeq:"⬆️ Importar",
     curcolor_label:"Cor atual",
     yt_hint:"Carregue um vídeo do YouTube e dê play (sincroniza ao vídeo), ou use <b>Tocar sem vídeo</b> (relógio interno). Toque num tempo da lista para pular.",
-    footer:"Projeto pessoal de fã, não oficial. Compatível com ARMY Bomb Ver 3, Ver 4 e SE/multiM.", donate:"☕ Me paga um cafézinho", contact:"✉️ Contato",
+    footer:"Projeto pessoal de fã, não oficial. Compatível com ARMY Bomb Ver 3, Ver 4 e SE/multiM.", donate:"☕ Me paga um cafézinho", contact:"✉️ Contato", visits_label:"Visitas",
     terms_title:"Termos e condições",
     terms_text:"Projeto de fã sem fins lucrativos e NÃO oficial. Não é afiliado, associado nem endossado por BTS, HYBE ou BIGHIT MUSIC. As marcas 'ARMY Bomb', 'BTS' e relacionadas pertencem aos seus donos. As sequências de luz são feitas por fãs e oferecidas como estão, sem garantia. Este site não hospeda música nem vídeo: o conteúdo do YouTube pertence aos seus autores e é reproduzido pelo YouTube. Use por sua conta e risco; não nos responsabilizamos por danos nem pelo funcionamento do lightstick. Ao usar este site você aceita estes termos.",
     st_scan:"Procurando…", st_conn:"Conectado", st_err:"Erro: ", st_disc:"Desconectado" },
@@ -1234,6 +1238,14 @@ renderGallery();
 $("#langSel").value = LANG;
 $("#langSel").onchange = e => applyLang(e.target.value);
 applyLang(LANG);
+
+// CONTADOR DE VISITAS (servicio externo gratis, sin registro — Abacus)
+(function(){
+  fetch("https://abacus.jasoncameron.dev/hit/lightstickv4-elgto/visitas")
+    .then(r=>r.json())
+    .then(d=>{ const e=$("#visitCount"); if(e && d && d.value!=null) e.textContent=d.value; })
+    .catch(()=>{ const e=$("#visitCount"); if(e) e.textContent="—"; });
+})();
 
 // AUTO-CARGA del pack de comunidad: si "pack.json" está en la misma carpeta,
 // se levanta solo al abrir (sin importar a mano). Serví el HTML junto a ese .json.
